@@ -208,15 +208,19 @@ end
 	local psu_dev1 = psu_dev("IT-M3432", ps_port_g, "cv", 2, "\r\n")
 	psu_dev1:print(psu_dev1:init("*IDN?;SYST:REM"))
 	psu_dev1:print(psu_dev1:init("PROT:CLE"))
-	psu_dev1:print(psu_dev1:init("SOUR:FUNC CC")) -- 配置环路优先模式  <CV|CC|VOLTage|CURRent>
 	psu_dev1:print(psu_dev1:init("OUTP:PONS RST")) 
 
-	-- psu_dev1:print(psu_dev1:init("VOLT 15.5;VOLT?"))
+	psu_dev1:print(psu_dev1:init("SOUR:FUNC CC"))          -- 配置环路优先模式  <CV|CC|VOLTage|CURRent>
+	psu_dev1:print(psu_dev1:init("OFF:VOLT ZERO"))         --ZERO 是表示仪器电压快速降到 0V，当设置为 CONSt 时，电压下降速度为正常速度
+	psu_dev1:print(psu_dev1:init("CURR:SLEW:NEG 999.999")) --0.001 to 999.999
+
+	psu_dev1:print(psu_dev1:init("OUTP:DEL 0")) 
+	psu_dev1:print(psu_dev1:init("OUTP:DEL:FALL 0")) 
+
+	psu_dev1:print(psu_dev1:init("VOLT 5.0;VOLT?"))
 	-- psu_dev1:print(psu_dev1:init("CURR:LIM:POS 10.0"))
 	-- psu_dev1:print(psu_dev1:init("CURR:LIM:NEG -10.0"))
 	-- psu_dev1:print(psu_dev1:init("CURR:PROT:STAT ON"))
-	-- psu_dev1:print(psu_dev1:init("OFF:VOLT ZERO"))
-
 
 	-- psu_dev1:print(psu_dev1:init("VOLT:PROT 18.00"))
 	-- psu_dev1:print(psu_dev1:init("VOLT:PROT:STAT ON"))
@@ -229,10 +233,11 @@ local PS_LIMIT_CURR=30.0
 local PS_LIMIT_VOLT=20 --58.0
 local PS_LIMIT_PWR =800.0
 
-function chg_dsg(mode, curr, timeout, chg_volt )
+function chg_dsg(mode, curr, timeout, chg_volt, hi_res ) --测试时间小于500ms，电流测量是不准的，maybe 用 fech指令
+	local ret = 0
 	--- charge or discharge ---------
 	if(mode == "discharge")then
-		chg_volt = 0.0
+		chg_volt = 4.0
 	end
 
 	if(chg_volt > PS_LIMIT_VOLT or chg_volt < 0) then
@@ -243,7 +248,12 @@ function chg_dsg(mode, curr, timeout, chg_volt )
 	psu_dev1:set_vi( chg_volt, curr, "all_cc")
 	psu_dev1:out("on")
 	Sleep(timeout)
-	local ret = psu_dev1:get_vi("all_slow")
+	if (hi_res == "hi_res") then
+		ret = psu_dev1:get_vi("all_slow")
+	else
+		ret = psu_dev1:get_vi("all")
+	end
+	
 	psu_dev1:out("off")
 	return ret
 end
@@ -264,7 +274,7 @@ function occp_ocdp(mode, curr_down_limit, curr_up_limit, timeout, chg_volt, judg
 	if(mode == "discharge") then
 		chg_volt = 5.0
 		-- down limit
-		psu_dev1:set_vi( chg_volt, curr_down_limit, "all_cc")
+		psu_dev1:set_vi( chg_volt, curr_down_limit, "all")
 		psu_dev1:out("on")
 		Sleep(timeout)
 		ret = psu_dev1:get_vi("i")
@@ -276,7 +286,7 @@ function occp_ocdp(mode, curr_down_limit, curr_up_limit, timeout, chg_volt, judg
 			return false
 		end
 		-- up limit
-		psu_dev1:set_vi( chg_volt, curr_up_limit, "all_cc")
+		psu_dev1:set_vi( chg_volt, curr_up_limit, "all")
 		psu_dev1:out("on")
 		Sleep(timeout)
 		ret = psu_dev1:get_vi("i")
@@ -292,7 +302,7 @@ function occp_ocdp(mode, curr_down_limit, curr_up_limit, timeout, chg_volt, judg
 		end
 	elseif (mode == "charge") then
 		-- down limit
-		psu_dev1:set_vi( chg_volt, curr_down_limit, "all_cc")
+		psu_dev1:set_vi( chg_volt, curr_down_limit, "all")
 		psu_dev1:out("on")
 		Sleep(timeout)
 		ret = psu_dev1:get_vi("i")
@@ -304,7 +314,7 @@ function occp_ocdp(mode, curr_down_limit, curr_up_limit, timeout, chg_volt, judg
 			return false
 		end
 		-- up limit
-		psu_dev1:set_vi( chg_volt, curr_up_limit, "all_cc")
+		psu_dev1:set_vi( chg_volt, curr_up_limit, "all")
 		psu_dev1:out("on")
 		Sleep(timeout)
 		ret = psu_dev1:get_vi("i")
@@ -323,14 +333,10 @@ function occp_ocdp(mode, curr_down_limit, curr_up_limit, timeout, chg_volt, judg
 	end
 end
 
+chg_dsg("discharge", -1.0, 500, 0, "hi_res")
+chg_dsg("charge", 1.0, 5000, 5.0, "hi_res")
 
-chg_dsg("discharge", -5.0, 5000, 0)
-chg_dsg("charge", 5.0, 5000, 16.0)
-
-
-
-
-
+psu_dev1:print(psu_dev1:init("SYSTem:BEEPer:IMMediate"))
 
 -- occp_ocdp()
 -- psu_test()
