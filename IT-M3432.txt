@@ -1,0 +1,328 @@
+*IDN?
+ITECH Ltd,IT-M3432,803421022767010012,1.60-1.18-0.61-1.20
+
+CHAN?
+1
+
+SYST:KEY 8
+
+SYSTem:COMMunicate:SERial:BAUDrate?
+115200
+
+SYSTem:VERSion?
+1991.0
+
+ADDRess?
+0
+
+SYSTem:BOOT:VERSion?
+V0.07
+
+错误代码列表
+SYST:ERR?
+
+保护故障clear
+PROTection:CLEar
+---------------sink 2A--------------
+MEAS:CURR?
+-2.0006
+
+fetch 更快一些
+
+[19:15:43.531]发→◇FETC:CURR?
+[19:15:43.551]收←◆-2.00073
+[19:15:54.658]发→◇MEAS:CURR?
+[19:15:54.879]收←◆-2.00058
+
+[19:17:00.009]发→◇MEAS:POW?
+[19:17:00.223]收←◆-102.772
+[19:17:14.567]发→◇FETC:POW?
+[19:17:14.575]收←◆-102.762
+
+[19:17:43.560]发→◇MEAS:VOLT?
+[19:17:43.776]收←◆51.3508
+[19:17:49.725]发→◇FETC:VOLT?
+[19:17:49.744]收←◆51.3484
+
+[19:18:21.922]发→◇MEAS:CAP?
+[19:18:21.935]收←◆-0.130384
+[19:18:28.246]发→◇FETC:CAP?
+[19:18:28.256]收←◆-0.133899
+
+
+获取回馈到电网的能量 暂时无法用
+[19:19:25.024]发→◇MEAS:REC:ENER?
+[19:19:32.595]发→◇FETCh:REC:ENERgy?
+
+FETC:LOC:VOLT?
+MEAS:REM:VOLT?
+
+返回累积的安培-小时
+[19:22:52.690]发→◇FETC:AHO?
+[19:22:52.703]收←◆-0.280862
+将安培-小时重置为零
+SENS:AHO:RES
+
+返回累积的瓦-小时
+[19:22:54.345]发→◇FETC:WHO?
+[19:22:54.352]收←◆-14.4674
+将瓦特-小时重置为零
+SENS:WHO:RES
+
+
+返回测量的电压,电流和功率，安时，瓦时
+FETC?
+MEAS?
+
+
+输出：
+OUTP ON 
+OUTP OFF
+
+清空保护寄存状态：
+PROT:CLE
+
+设置输出延迟时间<0.000-10.000>
+OUTP:DEL 0.01
+
+设置关闭延迟时间<0.000-10.000>
+OUTP:DEL:FALL 0.001
+
+
+来设置源刚上电时的输出状态 RST|LAST|LOFF
+OUTP:PONS LAST
+[19:29:11.301]发→◇OUTPut:PONS?
+[19:29:11.311]收←◆RST
+
+查询输出反接的状态？？？？？？？？？？？？？？？？？？、WTF
+OUTP:REV?
+
+设置 Sense 使能状态 0|OFF|1|ON
+SENS OFF
+
+设置 Sense 滤波深度 <FAST|MEDium|SLOW>
+SENS:FILT:LEV SLOW
+
+设置 FOLDBACK 保护模式 <OFF|CC|CV>
+[09:15:49.754]发→◇OUTP:PROT:FOLD?
+[09:15:49.775]收←◆CV
+
+设置软件看门狗的状态<0|1|OFF|ON>
+OUTP:PROT:WDOG 0
+设置软件看门狗的延迟 min 2s
+OUTP:PROT:WDOG:DEL 2
+
+
+设置折返保护
+本系列仪器有Foldback保护功能，用于电源CV/CC切换时关闭输出，以达到保
+护某些对电压过冲、电流过冲敏感的待测物。Foldback保护允许用户指定一个工
+作模式，并设置保护延迟时间，若当前工作模式发生切换，从工作环路切换触发
+保护开始，延迟时间耗尽即触发保护，关闭输出。
+• 启用FOLDBACK功能；
+• 当前环路切换为设定的工作模式并且持续时间大于设定的保护延时时间；
+
+您可以为FOLDBACK延迟指定一个时间，可以使仪器在指定的延迟区间忽略运
+行模式的瞬时变化，在大多数情况下，这种瞬时情况不视为切换状态，此时并无
+必要触发折返功能并禁用输出。一旦超过FOLDBACK延迟时间，则关闭输出
+设置 FOLDBACK 保护模式 <OFF|CC|CV>
+OUTP:PROT:FOLD CC
+
+设置 FOLDBACK 保护延时时间 min：0； 0.0001
+OUTP:PROT:FOLD:DEL 0.0001
+
+
+来设置源的输出电流值
+CURR 3.500
+查询？
+[SOURce:]CURRent[:LEVel][:IMMediate][:AMPLitude]? [MINimum|MAXimum]
+
+设置源输出的电流最大值 （charge CC模式限流值）<MINimum-MAXimum>|MINimum|MAXimum
+CURR:LIM:POS 2.0
+
+设置源输出的电流最小值<MINimum-MAXimum>|MINimum = -31|MAXimum =0
+CURR:LIM:NEG MAX
+
+设置源触发时的输出电流值  MIN TO MAX
+CURR:TRIG 3.500
+
+设置源输出过电流保护点  MIN TO MAX
+CURR:PROT 10.000
+
+设置源输出过电流保护延迟时间<0-10>
+CURR:PROT:DEL 10.00
+
+设置源输出过电流保护状态 0|OFF|1|ON
+CURR:PROT:STAT ON
+
+设置源输出欠电流保护点 MIN TO MAX
+CURR:UND:PROT 0.50
+
+设置源输出欠电流保护延迟时间<0-10>
+CURR:UND:PROT:DEL 10.000
+
+设置源输出欠电流保护状态 0|OFF|1|ON
+CURR:UND:PROT:STAT ON
+
+输出欠流保护的暖机时间 0-30
+CURR:UND:PROT:WARM 10.000
+
+设置源输出电流上升和下降斜率 0.001 - 999.999
+CURR:SLEW 0.5,0.5
+
+设置源输出的电流下降斜率
+CURR:SLEW:NEG 1.000
+
+设置源输出的电流上升斜率
+CURR:SLEW:POS 1.000
+
+设置源输出电压
+VOLT 55.00
+
+
+设置设置源 CC 优先时电压上限值
+VOLT:LIM 55.0
+
+设置设置源 CC 优先时电压下限值
+VOLT:LIM:LOW 10.0
+
+设置源触发时的输出电压
+VOLT:TRIG 60.00
+
+设置源电压上升和下降斜率<MINimum-MAXimum>|MINimum|MAXimum
+VOLT:SLEW MAX,MAX
+
+设置源电压下降斜率
+VOLT:SLEW:NEG 0.03
+
+设置源电压上升斜率
+VOLT:SLEW:POS 0.03
+
+设置源过电压保护点 MIN TO MAX
+VOLT:PROT 61.00
+
+设置源过电压保护的延迟时间
+VOLT:PROT:DEL 10.00
+
+设置源过电压保护状态 0|OFF|1|ON
+VOLT:PROT:STAT ON
+
+设置源输出的欠电压保护点
+VOLT:UND:PROT 10.00
+
+设置源输出时欠电压保护的延迟时间
+VOLT:UND:PROT:DEL 10.00
+
+设置源欠电压保护状态
+VOLT:UND:PROT:STAT ON
+
+设置源欠压保护的暖机时间
+VOLT:UND:PROT:WARM 10.00
+
+
+设置源的输出功率值
+POW:LIM 810.0
+
+设置源的过功率保护点
+POW:PROT 810.0
+
+过功率保护延迟时间
+POW:PROT:DEL 10.00
+
+设置源的过功率保护状态
+POW:PROT:STAT ON
+
+设置源的工作模式?????????????????????????
+FIXed|LIST|BATTery|BEMulator
+FUNC:MODE FIX
+
+设置源的控制环的优先级<CV|CC|VOLTage|CURRent>
+FUNC VOLT
+
+设置 CC 环路优先时电压下降速度。ZERO 是表示仪器电压快速降
+到 0V，当设置为 CONSt 时，电压下降速度为正常速度
+OFF:VOLT ZERO
+
+
+清除读数缓存
+TRACe:CLEar
+
+设置缓存的大小 <2-2500>|MINimum|MAXimum
+TRAC:POINt MAX
+
+选择缓存控制。选择 NEVer，禁用缓存；选择 NEXT，存储过程开始，
+填满缓存，然后停止；选择 ALWays，填满缓存后，将循环存储。
+TRAC:FEED:CONT NEXT
+
+选择摆放到缓存中的读数源，选择 VOLTage，电压读数则被放到缓存
+中，选择 CURRent，电流读数则被放在缓存中，如果选择 BOTH，当存储动作
+执行时，电压和电流则都被放在缓存中
+TRAC:FEED BOTH
+
+来选择缓存触发延迟时间0 to 3600s|MINimum|MAXimum
+TRAC:DEL MINimum
+
+选择缓存时间间隔<0.001-3600.0> MINimum-MAXimum|MINimum|MAXimum
+TRAC:TIM MAXimum
+
+读取缓存中的真实读数的个数
+TRACe:POINts:ACTual?
+
+选择缓存的数据是否自动清零
+TRAC:CLE:AUTO ON
+
+该命令用来读取缓存在缓存中的数值。
+说明:发送该命令前，需先执行 TRIGger[:IMMediate] 指令触发仪器进入数据存储状态，并且需要确保 TRACe:FEED:CONTrol <NEXT|ALWays|NEVer> 指令参数设置为 NEXT 或ALWays，否则发送 TRACe:DATA? 指令系统会报错
+TRACe:DATA?
+
+设置缓存滤波开启与关闭
+TRAC:FILT 0
+
+跳过List end of P.101---------------------------------------------------------------------
+当触发源选择为 BUS 时，发送一个立即触发
+TRIG
+
+设定 LIST 的触发源<KEYPad|BUS>
+TRIG:LIST:SOUR KEYPad
+
+该条指令用来启动 LIST 文件。当 List 运行结束后，界面显示 END，发送该指令
+可再次初始化 LIST 为等待触发运行状态。
+INIT:LIST
+
+复位 LIST 到空闲状态
+ABOR:LIST
+
+
+
+设置电池测试的充电或放电模式 CHARge|DISCharge
+BATTery:MODE CHAR
+
+设置充电的电压
+BATT:CHAR:VOLT 5.0
+设置充电的电流
+BATT:CHAR:CURR 3.0
+
+设置电池放电的电压
+BATT:DISC:VOLT 3.0
+设置电池放电的电流
+BATT:DISC:CURR 3.0
+设置关断的电压条件
+BATT:SHUT:VOLT 4.0 
+设置关断的电流条件
+BATT:SHUT:CURR 3.0 
+设置关断的电池容量条件
+BATT:SHUT:CAP 3.0
+设置关断的充放电时间
+BATT:SHUT:TIME 3.0 
+打开或关闭 Battery 功能<0|1|OFF|ON
+BATT 1
+把电池充放电参数保存在第 n 个 BANK 中<1-10
+BATT:SAV 1
+回调存储在第 n 个 BANK 中的电池充放电参数<1-10
+BATT:REC 1
+重置电池功能为初始设定状态
+BATTery:RESet
+
+P.111 
+第十二章 Parallel&Link 子系统---------------------------------------------------------------------
+
+
