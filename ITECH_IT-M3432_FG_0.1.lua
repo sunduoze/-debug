@@ -5,14 +5,10 @@ SerialPortName 		= {}
 Getindex()
 gPacKBatterCode     = GetPackCode()		      --全局电池条码
 gCellCode 		    = GetCellCode()			  --全局电芯条码/临时条码
-
-
 -- string(":CONF:VOLT;:SENS:VOLT:DCNPLC 0.02")
 -- string(":CONF:CURR;:SENS:CURR:DCNPLC 0.02;SAMP:COUN 1")
-
-
 local dbg_port_g = 1 --serial port
-local ps_port_g = 1--serial port
+local ps_port_g = 3--serial port
 
 --该函数
 function SetUI(TestItemName,ActMeas,TestRest,Time,ErrInfo,LimitMin,LimitMax)
@@ -136,8 +132,9 @@ end
 	 		 else
 	 		 	ShowMsg("para[mode] input error")
 	 		 end
-	 		 self.print(self, ret_val)
-	 		 SetUI("set_vi",tostring(ret_val),tostring(true), (0),"error info",tostring(90),tostring(200))
+	 		 -- self.print(self, ret_val)
+	 		 -- SetUI("set_vi",tostring(ret_val),tostring(true), (0),"error info",tostring(90),tostring(200))
+	 		 return ret_val
 		 end,
 		 get_vi = function(self, ...) 
 	 		 local para = {...}
@@ -159,8 +156,9 @@ end
 	 		 else
 	 		 	ShowMsg("para[mode] input error")
 	 		 end
-	 		 self.print(self, ret_val)
-	 		 SetUI("get_vi",tostring(ret_val),tostring(true), (0),"error info",tostring(90),tostring(200))
+	 		 -- self.print(self, ret_val)
+	 		 -- SetUI("get_vi",tostring(ret_val),tostring(true), (0),"error info",tostring(90),tostring(200))
+	 		 return ret_val
 		 end,
 	 	 out = function(self, ...) 
 	 		 local para = {...}
@@ -174,9 +172,9 @@ end
 	 		 else
 	 		 	ShowMsg("para[mode] input error")
 	 		 end
-
-	 		 self.print(self, ret_val)
-	 		 SetUI("out",tostring(ret_val),tostring(true), (0),"error info",tostring(90),tostring(200))
+	 		 -- self.print(self, ret_val)
+	 		 -- SetUI("out",tostring(ret_val),tostring(true), (0),"error info",tostring(90),tostring(200))
+	 		 return ret_val
 		 end,
 		 reset = function(self, ... )
 		 	-- body
@@ -213,7 +211,7 @@ end
 
 	psu_dev1:print(psu_dev1:init("SOUR:FUNC CC"))          -- 配置环路优先模式  <CV|CC|VOLTage|CURRent>
 	psu_dev1:print(psu_dev1:init("OFF:VOLT ZERO"))         --ZERO 是表示仪器电压快速降到 0V，当设置为 CONSt 时，电压下降速度为正常速度
-	psu_dev1:print(psu_dev1:init("CURR:SLEW:NEG 999.999")) --0.001 to 999.999
+	psu_dev1:print(psu_dev1:init("CURR:SLEW:POS 10")) --0.001 to 999.999
 
 	psu_dev1:print(psu_dev1:init("OUTP:DEL 0")) 
 	psu_dev1:print(psu_dev1:init("OUTP:DEL:FALL 0")) 
@@ -243,90 +241,149 @@ function chg_dsg(mode, curr, timeout, chg_volt, hi_res ) --测试时间小于500
 		ret = psu_dev1:get_vi("all")
 	end
 	psu_dev1:out("off")
+
+	if(mode == "discharge")then
+		SetUI("discharge",tostring(ret),tostring(true), (0),"pass",tostring(90),tostring(200))
+	else
+		SetUI("charge",tostring(ret),tostring(true), (0),"pass",tostring(90),tostring(200))
+	end
+	
 	return ret
 end
 
 
 --------all cc 
-function occp_ocdp(mode, curr_down_limit, curr_up_limit, timeout, chg_volt, curr_r, judge_curr_threshould)
+function occp_ocdp(mode, curr_down_limit, curr_up_limit, timeout, chg_volt, curr_r, timeout_r, judge_curr_threshould)
 	local ret = 0.0
 	--- charge or discharge ---------
 	if(chg_volt > PS_LIMIT_VOLT or chg_volt < 0) then -- over chg volt limit
 		return false
-	elseif (chg_volt * curr_down_limit > PS_LIMIT_PWR) then -- over power limit (curr_down_limit) 
+	elseif (chg_volt * math.abs(curr_down_limit) > PS_LIMIT_PWR) then -- over power limit (curr_down_limit) 
 		return false
-	elseif (chg_volt * curr_up_limit > PS_LIMIT_PWR) then -- over power limit (curr_up_limit) 
+	elseif (chg_volt * math.abs(curr_up_limit) > PS_LIMIT_PWR) then -- over power limit (curr_up_limit) 
 		return false
 	end
-	
+
 	if(mode == "discharge") then
-		chg_volt = 5.0
+		-- down limit
+		psu_dev1:set_vi( 0.0, curr_down_limit, "all_cc")
+		psu_dev1:out("on")
+		Sleep(timeout)
+		ret = psu_dev1:get_vi("i_slow")
+		psu_dev1:out("off")
+
+		LogPush("occp_ocdp, discharge, " .. tostring(0.0) .. ", " .. tostring(curr_down_limit) .. ", " .. tostring(ret))
+
+		if(math.abs(ret) > math.abs(curr_down_limit) * 1.005 or math.abs(ret) < math.abs(curr_down_limit) * 0.995) then
+			if(math.abs(ret) > math.abs(curr_down_limit) * 1.1 or math.abs(ret) < math.abs(curr_down_limit) * 0.9) then
+				ShowMsg("error:down limit protect!")
+			else
+				ShowMsg("psu accuracy low ")
+			end
+			return false
+		end
+		-- up limit
+		psu_dev1:set_vi( 0.0, curr_up_limit, "all_cc")
+		psu_dev1:out("on")
+		Sleep(timeout)
+		ret = psu_dev1:get_vi("i_slow") -- ret = psu_dev1:get_vi("i")
+		psu_dev1:out("off")
+		-- ShowMsg("up limit after curr:" .. ret)
+		LogPush("occp_ocdp, discharge, " .. tostring(0.0) .. ", " .. tostring(curr_up_limit) .. ", " .. tostring(ret))
+
+		if(math.abs(ret) > math.abs(judge_curr_threshould)) then
+			ShowMsg("occp_ocdp, protect FAIL")
+			-- return false
+		end
+
+		psu_dev1:set_vi( chg_volt, curr_r, "all_cc")
+		psu_dev1:out("on")
+		Sleep(timeout_r)
+		ret = psu_dev1:get_vi("i_slow")
+		psu_dev1:out("off")
+
+		if(tonumber(ret) > tonumber(curr_r) * 1.005 or tonumber(ret) < tonumber(curr_r) * 0.995) then
+			if(tonumber(ret) > tonumber(curr_r) * 1.1 or tonumber(ret) < tonumber(curr_r) * 0.9) then
+				ShowMsg("error: protect release fail!" .. "curr:" .. tostring(ret))
+			else
+				ShowMsg("[release]psu accuracy low ")
+			end
+			return false
+		end
+		if(mode == "discharge")then
+			SetUI("discharge",tostring(ret),tostring(true), (0),"pass",tostring(90),tostring(200))
+		else
+			SetUI("charge",tostring(ret),tostring(true), (0),"pass",tostring(90),tostring(200))
+		end
+		return true
+
+
+	elseif (mode == "charge") then
 		-- down limit
 		psu_dev1:set_vi( chg_volt, curr_down_limit, "all_cc")
 		psu_dev1:out("on")
 		Sleep(timeout)
-		ret = psu_dev1:get_vi("i")
+		ret = psu_dev1:get_vi("i_slow")
 		psu_dev1:out("off")
 
-		LogPush("occp_ocdp, discharge, " .. tostring(chg_volt) .. ", " .. tostring(curr_down_limit) .. ", " .. tostring(ret))
+		LogPush("occp_ocdp, charge, " .. tostring(chg_volt) .. ", " .. tostring(curr_down_limit) .. ", " .. tostring(ret))
 
-		if(ret > judge_curr_threshould) then
+		if(math.abs(ret) > math.abs(curr_down_limit) * 1.005 or math.abs(ret) < math.abs(curr_down_limit) * 0.995) then
+			if(math.abs(ret) > math.abs(curr_down_limit) * 1.1 or math.abs(ret) < math.abs(curr_down_limit) * 0.9) then
+				ShowMsg("error:down limit protect!")
+			else
+				ShowMsg("psu accuracy low ")
+			end
 			return false
 		end
 		-- up limit
 		psu_dev1:set_vi( chg_volt, curr_up_limit, "all_cc")
 		psu_dev1:out("on")
 		Sleep(timeout)
-		ret = psu_dev1:get_vi("i")
-		psu_dev1:out("off")
-
-		LogPush("occp_ocdp, discharge, " .. tostring(chg_volt) .. ", " .. tostring(curr_up_limit) .. ", " .. tostring(ret))
-
-		if(ret < judge_curr_threshould) then
-			return false
-		else
-			LogPush("occp_ocdp, charge, PASS \r\n")
-			return true
-		end
-
-
-	elseif (mode == "charge") then
-		-- down limit
-		psu_dev1:set_vi( chg_volt, curr_down_limit, "all")
-		psu_dev1:out("on")
-		Sleep(timeout)
-		ret = psu_dev1:get_vi("i")
-		psu_dev1:out("off")
-
-		LogPush("occp_ocdp, charge, " .. tostring(chg_volt) .. ", " .. tostring(curr_down_limit) .. ", " .. tostring(ret))
-
-		if(ret < judge_curr_threshould) then
-			return false
-		end
-		-- up limit
-		psu_dev1:set_vi( chg_volt, curr_up_limit, "all")
-		psu_dev1:out("on")
-		Sleep(timeout)
-		ret = psu_dev1:get_vi("i")
+		ret = psu_dev1:get_vi("i_slow")
 		psu_dev1:out("off")
 
 		LogPush("occp_ocdp, charge, " .. tostring(chg_volt) .. ", " .. tostring(curr_up_limit) .. ", " .. tostring(ret))
-
-		if(ret > judge_curr_threshould) then
-			return false
-		else
-			LogPush("occp_ocdp, charge, PASS \r\n")
-			return true
+		
+		if(math.abs(ret) > math.abs(judge_curr_threshould)) then
+			ShowMsg("occp_ocdp, protect FAIL")
+			-- return false
 		end
+
+		psu_dev1:set_vi( 0.0, curr_r, "all_cc")
+		psu_dev1:out("on")
+		Sleep(timeout_r)
+		ret = psu_dev1:get_vi("i_slow")
+		psu_dev1:out("off")
+
+		if(tonumber(ret) < tonumber(curr_r) * 1.005 or tonumber(ret) > tonumber(curr_r) * 0.995) then
+			if(tonumber(ret) < tonumber(curr_r) * 1.1 or tonumber(ret) > tonumber(curr_r) * 0.9) then
+				ShowMsg("error: protect release fail!" .. "curr:" .. tostring(ret))
+			else
+				ShowMsg("[release]psu accuracy low ")
+			end
+			return false
+		end
+		if(mode == "discharge")then
+			SetUI("discharge",tostring(ret),tostring(true), (0),"pass",tostring(90),tostring(200))
+		else
+			SetUI("charge",tostring(ret),tostring(true), (0),"pass",tostring(90),tostring(200))
+		end
+		return true
+
 	else
 		ShowMsg("mode set error:".. mode)
 	end
 end
 
--- chg_dsg("discharge", -1.0, 1000, 0, "hi_res")
--- chg_dsg("charge", 1.0, 1000, 5.0, "hi_res")
--- Sleep(100)
-occp_ocdp("discharge", 22.0, 25.2, 1050, 5.2, 1.0,  0.5)
+chg_dsg("discharge", -1.0, 1000, 0, "hi_res")
+chg_dsg("charge", 1.0, 1000, 5.0, "hi_res")
+Sleep(100)
+occp_ocdp("discharge", -2.0, -2.6, 1000, 5.2, 1.0, 500, 0.5)
+Sleep(1000)
+occp_ocdp("charge", 2.0, 2.6, 1000, 5.2, -1.0, 500, 0.5)
+-- Sleep(1000)
+-- occp_ocdp("discharge", -2.0, -2.65, 1050, 5.2, 1.0,  1000, 0.5)
 -- psu_dev1:print(psu_dev1:init("SYSTem:BEEPer:IMMediate"))
 
 -- occp_ocdp()
