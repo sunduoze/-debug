@@ -349,11 +349,6 @@ function occp_ocdp(mode, curr_down_limit, curr_up_limit, timeout, chg_volt, curr
 			ShowMsg("occp_ocdp, protect FAIL")
 			-- return false
 		end
-		psu_dev1:set_vi( 0.0, curr_r, "all_cc")
-		psu_dev1:out("on")
-		Sleep(timeout_r)
-		ret = psu_dev1:get_vi("i_slow")
-		psu_dev1:out("off")
 
 		if(curr_up_limit > 20.0) then -- issue_pic0006
 			psu_dev1:print(psu_dev1:init("PROT:CLE"))
@@ -364,8 +359,6 @@ function occp_ocdp(mode, curr_down_limit, curr_up_limit, timeout, chg_volt, curr
 			ret = psu_dev1:get_vi("i_slow")
 			psu_dev1:out("off")
 		end
-
-
 
 		if(tonumber(ret) < tonumber(curr_r) * 1.005 or tonumber(ret) > tonumber(curr_r) * 0.995) then
 			if(tonumber(ret) < tonumber(curr_r) * 1.1 or tonumber(ret) > tonumber(curr_r) * 0.9) then
@@ -393,12 +386,6 @@ Sleep(100)
 occp_ocdp("discharge", -19.0, -20.2, 1000, 5.2, 1.0, 500, 0.5)
 Sleep(1000)
 occp_ocdp("charge", 19.0, 20.2, 1000, 5.5, -1.0, 500, 0.5)
--- Sleep(1000)
--- occp_ocdp("discharge", -2.0, -2.65, 1050, 5.2, 1.0,  1000, 0.5)
--- psu_dev1:print(psu_dev1:init("SYSTem:BEEPer:IMMediate"))
-
--- occp_ocdp()
--- psu_test()
 
 SetLuaAllTestResult(true)
 
