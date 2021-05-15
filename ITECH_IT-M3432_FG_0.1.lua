@@ -380,12 +380,17 @@ function occp_ocdp(mode, curr_down_limit, curr_up_limit, timeout, chg_volt, curr
 	end
 end
 
-chg_dsg("discharge", -1.0, 1000, 0, "hi_res")
-chg_dsg("charge", 1.0, 1000, 5.0, "hi_res")
-Sleep(100)
-occp_ocdp("discharge", -19.0, -20.2, 1000, 5.2, 1.0, 500, 0.5)
-Sleep(1000)
-occp_ocdp("charge", 19.0, 20.2, 1000, 5.5, -1.0, 500, 0.5)
+for i=1,20 do
+	chg_dsg("discharge", -1.0, 1000, 0, "hi_res")
+	chg_dsg("charge", 1.0, 1000, 5.0, "hi_res")
+	Sleep(100)
+	occp_ocdp("discharge", -20.0, -21.5, 1000, 5.2, 1.0, 500, 0.5)
+	Sleep(1000)
+	occp_ocdp("charge", 20.0, 21.5, 1000, 5.5, -1.0, 500, 0.5)
+	SetUI("loop " .. i, "",tostring(true), (0),"-------------",tostring(0),tostring(0))
+end
+
+
 
 SetLuaAllTestResult(true)
 
